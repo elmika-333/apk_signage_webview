@@ -1,46 +1,39 @@
-name: Android CI
+name: Build Android APK
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
+    - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Set up JDK 17
+    - name: Setup JDK 17
       uses: actions/setup-java@v3
       with:
-        distribution: 'temurin'
+        distribution: temurin
         java-version: 17
 
-    - name: Set up Android SDK
+    - name: Setup Android SDK
       uses: android-actions/setup-android@v2
-
-    - name: Cache Gradle packages
-      uses: actions/cache@v3
       with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper/
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
+        api-level: 34
 
     - name: Make gradlew executable
       run: chmod +x ./gradlew
 
     - name: Build Release APK
-      run: ./gradlew assembleRelease --stacktrace --info --debug
+      run: ./gradlew assembleRelease --no-daemon
 
-    - name: Upload APK
+    - name: Upload Release APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-release.apk
