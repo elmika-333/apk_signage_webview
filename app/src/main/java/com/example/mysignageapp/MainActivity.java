@@ -96,20 +96,30 @@ public class MainActivity extends AppCompatActivity {
         builder.setTitle("Masukkan URL Signage");
 
         final EditText input = new EditText(this);
-        input.setHint("http://192.168.1.1/endqueue/signage");
+        input.setHint("http://192.168.1.100/endqueue/signage");
         builder.setView(input);
 
         builder.setPositiveButton("Simpan", (dialog, which) -> {
             String url = input.getText().toString().trim();
-            if (!url.isEmpty()) {
-                prefs.edit().putString("signage_url", url).apply();
-                webView.loadUrl(url);
+
+            // Validasi sederhana agar hanya URL http/https
+            if (!url.matches("^https?://[\\w\\.-]+(:\\d+)?(/.*)?$")) {
+                new AlertDialog.Builder(this)
+                        .setTitle("URL Tidak Valid")
+                        .setMessage("Masukkan URL yang benar, contoh: http://192.168.1.100/path")
+                        .setPositiveButton("OK", null)
+                        .show();
+                return;
             }
+
+            prefs.edit().putString("signage_url", url).apply();
+            webView.loadUrl(url);
         });
 
         builder.setCancelable(false);
         builder.show();
     }
+
 
     private void hideSystemUI() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
