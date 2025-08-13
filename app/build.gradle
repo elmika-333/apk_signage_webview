@@ -4,6 +4,7 @@ plugins {
 }
 
 android {
+    namespace 'com.example.mysignageapp'  // wajib ada ini
     compileSdk 34
 
     defaultConfig {
