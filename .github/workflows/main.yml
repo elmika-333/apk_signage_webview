@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Signed Android APK
 
 on:
   push:
@@ -8,6 +8,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    env:
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
     steps:
     - name: Checkout repository
@@ -19,17 +24,21 @@ jobs:
         distribution: temurin
         java-version: 17
 
+    - name: Decode keystore from Base64 and save to file
+      run: |
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > my-release-key.jks
+
     - name: Make gradlew executable
       run: chmod +x ./gradlew
 
-    - name: Build Release APK
+    - name: Build signed Release APK
       run: ./gradlew assembleRelease --no-daemon
 
     - name: List APK files recursively
       run: ls -R app/build/outputs/apk/
 
-    - name: Upload APK artifact
+    - name: Upload signed APK artifact
       uses: actions/upload-artifact@v4
       with:
-        name: app-release-apk
-        path: app/build/outputs/apk/release/app-release-unsigned.apk
+        name: app-release-signed-apk
+        path: app/build/outputs/apk/release/app-release.apk
