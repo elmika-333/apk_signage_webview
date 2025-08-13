@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.View;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
@@ -95,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
         builder.setTitle("Masukkan URL Signage");
 
         final EditText input = new EditText(this);
-        input.setHint("http://192.168.1.5:5555/endqueue_std/signage");
+        input.setHint("http://192.168.1.1/endqueue/signage");
         builder.setView(input);
 
         builder.setPositiveButton("Simpan", (dialog, which) -> {
@@ -143,5 +144,25 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         // Disable back button supaya tidak keluar aplikasi
+    }
+
+    // ============================
+    // Fitur Refresh Manual
+    // ============================
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // Keyboard F5
+        if (keyCode == KeyEvent.KEYCODE_F5) {
+            webView.reload();
+            return true;
+        }
+
+        // Remote MENU atau BACK
+        if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_BACK) {
+            webView.reload();
+            return true; // mencegah keluar app
+        }
+
+        return super.onKeyDown(keyCode, event);
     }
 }
