@@ -3,18 +3,19 @@ package com.example.mysignageapp;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
-import android.webkit.WebResourceError;
-import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.EditText;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -24,17 +25,20 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 100;
     private WebView webView;
+    private SharedPreferences prefs;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // fullscreen immersive mode
+        // Fullscreen immersive
         hideSystemUI();
 
         setContentView(R.layout.activity_main);
         webView = findViewById(R.id.webview);
+
+        prefs = getSharedPreferences("signage_prefs", MODE_PRIVATE);
 
         // WebView settings
         WebSettings ws = webView.getSettings();
@@ -42,45 +46,34 @@ public class MainActivity extends AppCompatActivity {
         ws.setMediaPlaybackRequiresUserGesture(false);
         ws.setDomStorageEnabled(true);
 
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                super.onReceivedError(view, request, error);
-                android.util.Log.e("WebViewError", "Error loading: " + error.getDescription());
-            }
+        // Scale content fullscreen
+        ws.setLoadWithOverviewMode(true);
+        ws.setUseWideViewPort(true);
+        ws.setTextZoom(100);
+        ws.setSupportZoom(false);
+        ws.setBuiltInZoomControls(false);
 
-            @SuppressWarnings("deprecation")
-            @Override
-            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                super.onReceivedError(view, errorCode, description, failingUrl);
-                android.util.Log.e("WebViewError", "Error loading: " + description);
-            }
-        });
-
+        webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(() -> {
-                    if (request.getResources() != null) {
-                        boolean granted = false;
-                        for (String res : request.getResources()) {
-                            if (res.equals(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
-                                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECORD_AUDIO)
-                                        == PackageManager.PERMISSION_GRANTED) {
-                                    granted = true;
-                                } else {
-                                    ActivityCompat.requestPermissions(MainActivity.this,
-                                            new String[]{Manifest.permission.RECORD_AUDIO},
-                                            REQUEST_RECORD_AUDIO_PERMISSION);
-                                    return;
-                                }
+                    boolean granted = false;
+                    for (String res : request.getResources()) {
+                        if (res.equals(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
+                            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECORD_AUDIO)
+                                    == PackageManager.PERMISSION_GRANTED) {
+                                granted = true;
+                            } else {
+                                ActivityCompat.requestPermissions(MainActivity.this,
+                                        new String[]{Manifest.permission.RECORD_AUDIO},
+                                        REQUEST_RECORD_AUDIO_PERMISSION);
+                                return;
                             }
                         }
-                        if (granted) {
-                            request.grant(request.getResources());
-                        } else {
-                            request.deny();
-                        }
+                    }
+                    if (granted) {
+                        request.grant(request.getResources());
                     } else {
                         request.deny();
                     }
@@ -88,15 +81,39 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Ganti URL ini dengan URL jaringan lokal kamu yang ingin dibuka di WebView
-        webView.loadUrl("http://192.168.1.5:5555/endqueue_std/signage");
+        // First-time URL setup
+        String savedUrl = prefs.getString("signage_url", null);
+        if (savedUrl == null) {
+            showUrlInputDialog();
+        } else {
+            webView.loadUrl(savedUrl);
+        }
+    }
+
+    private void showUrlInputDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Masukkan URL Signage");
+
+        final EditText input = new EditText(this);
+        input.setHint("http://192.168.1.5:5555/endqueue_std/signage");
+        builder.setView(input);
+
+        builder.setPositiveButton("Simpan", (dialog, which) -> {
+            String url = input.getText().toString().trim();
+            if (!url.isEmpty()) {
+                prefs.edit().putString("signage_url", url).apply();
+                webView.loadUrl(url);
+            }
+        });
+
+        builder.setCancelable(false);
+        builder.show();
     }
 
     private void hideSystemUI() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             WindowInsetsControllerCompat controller =
                     new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
-
             controller.hide(WindowInsetsCompat.Type.statusBars() | WindowInsetsCompat.Type.navigationBars());
             controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         } else {
