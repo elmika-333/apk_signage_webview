@@ -3,14 +3,17 @@ name: Build Android APK
 on:
   push:
     branches:
-      - main  # sesuaikan dengan nama branch kamu
+      - main  # ganti dengan branch kamu
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout source code
+    - name: Checkout repository
       uses: actions/checkout@v3
 
     - name: Setup JDK 17
@@ -22,14 +25,14 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x ./gradlew
 
-    - name: Build APK release
+    - name: Build Release APK
       run: ./gradlew assembleRelease --no-daemon
 
-    - name: Show APK files (debug)
-      run: ls -l app/build/outputs/apk/release/
+    - name: List APK files recursively
+      run: ls -R app/build/outputs/apk/
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-release-apk
-        path: app/build/outputs/apk/release/app-release.apk
+        path: app/build/outputs/apk/release/app-release.apk  # nanti sesuaikan dengan hasil ls
