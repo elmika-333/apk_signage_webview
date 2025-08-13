@@ -27,20 +27,24 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // fullscreen immersive mode
         hideSystemUI();
-
         setContentView(R.layout.activity_main);
+
         webView = findViewById(R.id.webview);
 
-        // WebView settings
         WebSettings ws = webView.getSettings();
         ws.setJavaScriptEnabled(true);
         ws.setMediaPlaybackRequiresUserGesture(false);
         ws.setDomStorageEnabled(true);
 
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                super.onReceivedError(view, request, error);
+                android.util.Log.e("WebViewError", "Error loading: " + error.getDescription());
+            }
+        });
+
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
