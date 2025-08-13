@@ -26,7 +26,8 @@ jobs:
 
     - name: Decode keystore from Base64 and save to file
       run: |
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > my-release-key.jks
+        mkdir -p app
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/my-release-key.jks
 
     - name: Make gradlew executable
       run: chmod +x ./gradlew
