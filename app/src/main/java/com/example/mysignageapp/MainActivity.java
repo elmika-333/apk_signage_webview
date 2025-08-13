@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -27,11 +29,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        hideSystemUI();
-        setContentView(R.layout.activity_main);
 
+        // fullscreen immersive mode
+        hideSystemUI();
+
+        setContentView(R.layout.activity_main);
         webView = findViewById(R.id.webview);
 
+        // WebView settings
         WebSettings ws = webView.getSettings();
         ws.setJavaScriptEnabled(true);
         ws.setMediaPlaybackRequiresUserGesture(false);
@@ -42,6 +47,13 @@ public class MainActivity extends AppCompatActivity {
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 super.onReceivedError(view, request, error);
                 android.util.Log.e("WebViewError", "Error loading: " + error.getDescription());
+            }
+
+            @SuppressWarnings("deprecation")
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                super.onReceivedError(view, errorCode, description, failingUrl);
+                android.util.Log.e("WebViewError", "Error loading: " + description);
             }
         });
 
@@ -76,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Ganti URL ini dengan URL jaringan lokal kamu yang ingin dibuka di WebView
         webView.loadUrl("http://192.168.1.5:5555/endqueue_std/signage");
     }
 
@@ -112,6 +125,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        // disable back button
+        // Disable back button supaya tidak keluar aplikasi
     }
 }
